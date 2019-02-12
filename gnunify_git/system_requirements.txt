@@ -1,0 +1,9 @@
+Just run the following commands:
+$ sudo add-apt-repository -y ppa:ethereum/ethereum
+$ sudo apt update
+$ sudo apt install solc #just make sure "solc --version" reports version 0.5.x
+$ sudo apt install ethereum
+$ sudo apt install python3
+$ sudo apt install python3-pip
+$ sudo pip3 install eth-abi
+$ sudo pip3 install web3
