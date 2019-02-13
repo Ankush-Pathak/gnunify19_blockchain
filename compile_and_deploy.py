@@ -110,8 +110,6 @@ def getBalanceUPI(upi_addr, pin):
     return upi.functions.getBalanceUPI(upi_addr, pin).call()
 
 
-choice = 1
-print("gB: %s"%(getBalance(1,1234)))
 while True:
     print("\n\n------------------------------------")
     print("1. Print balance")
