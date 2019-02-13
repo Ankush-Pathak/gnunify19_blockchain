@@ -43,48 +43,103 @@ UPI = web3.eth.contract(abi = abi, bytecode = binary)
 balances = [10000,10000]
 balances_en = encode_single('uint[]',balances)
 
-names = ['a b','b c']
+names = ['Satoshi Nakamoto','Vitalik Buterin']
 names = [n.encode('utf-8') for n in names]
 names_en = encode_single('bytes32[]',names)
 
 pins = [1234, 5678]
 pins_en = encode_single('uint[]',pins)
 
-upi_addrs = ['a.b@bank','b.c@bank']
+upi_addrs = ['sn@bitcoin','vb@eth']
 upi_addrs = [u.encode('utf-8') for u in upi_addrs]
 upi_addrs_en = encode_single('bytes32[]',upi_addrs)
 
-acc_nos = [0,1]
+acc_nos = [1,2]
 acc_nos_en = encode_single('uint[]',acc_nos)
 
-web3.miner.start(1)
+print("\nOur Bank DB: ")
+for i in range(2):
+    print("Holder name: %s"%names[i].decode('utf-8'))
+    print("Acc no: %s"%acc_nos[i])
+    print("Pin no: %s"%pins[i])
+    print("UPI Addr: %s"%upi_addrs[i].decode('utf-8'))
+    print("-------------------------------\n\n")
 
-if isdeploy_contract == 1: 
+if isdeploy_contract == 1:
+    web3.miner.start(1)
     tx_hash = UPI.constructor(balances, names, upi_addrs, pins, acc_nos).transact()
     #Wait for txn to be added to the blockchain
     tx_receipt = web3.eth.waitForTransactionReceipt(tx_hash)
-    
+    web3.miner.stop()
+
     contract_address = tx_receipt.contractAddress
     writeToFile(contract_address)
-    
-contract_address = readFromFile()
+
+else: 
+    contract_address = readFromFile()
+
 #Create an instance of the deployed contract
 upi = web3.eth.contract(address = contract_address, abi= abi)
 
-#One UPI txn
-ret_value = upi.functions.verifyUPIAddr(upi_addrs[1]).call()
-print("verify: %s"%decode_single('bytes32',ret_value).decode('utf-8'))
+def verifyUPIAddr(upi_addr):
+    global upi
+    upi_addr = str(upi_addr).encode('utf-8')
+    ret_value = upi.functions.verifyUPIAddr(upi_addr).call()
 
-tx_hash = ret_value = upi.functions.sendMoney(acc_nos[0], upi_addrs[1], pins[0], 1000).transact()
+    return decode_single('bytes32',ret_value).decode('utf-8')
 
-web3.eth.waitForTransactionReceipt(tx_hash)
-print("send money: %s"%ret_value)
+def sendMoney(from_upi_addr, to_upi_addr, pin, amount):
+    global upi,web3
+    from_upi_addr = str(from_upi_addr).encode('utf-8')
+    to_upi_addr = str(to_upi_addr).encode('utf-8')
 
-ret_value = upi.functions.getBalance(acc_nos[0],pins[0]).call()
-print("first get bal: %s"%ret_value)
+    web3.miner.start(1)
+    tx_hash =  upi.functions.sendMoney(from_upi_addr, to_upi_addr, pin, amount).transact()
+    web3.eth.waitForTransactionReceipt(tx_hash)
+    web3.miner.stop()
 
-ret_value = upi.functions.getBalance(acc_nos[1],pins[1]).call()
-print("second get bal: %s"%ret_value)
+def getBalance(acc_no, pin):
+    global upi
+    return upi.functions.getBalance(acc_no,pin).call()
+
+def getBalanceUPI(upi_addr, pin):
+    global upi
+    upi_addr = str(upi_addr).encode('utf-8')
+    pin = int(pin)
+
+    return upi.functions.getBalanceUPI(upi_addr, pin).call()
+
+
+choice = 1
+print("gB: %s"%(getBalance(1,1234)))
+while True:
+    print("\n\n------------------------------------")
+    print("1. Print balance")
+    print("2. Verify UPI address")
+    print("3. Send money")
+    print("4. Exit")
+    choice = int(input("Enter choice: "))
+   
+    if choice > 3 or choice < 1:
+        break
+
+    upi_addr = str(input("Your UPI addr: "))
+    pin = int(input("Pin: "))
+
+
+    if choice == 1:
+        print("Balance: %s"%getBalanceUPI(upi_addr, pin))
+
+    elif choice == 2:
+        print("Verify UPI addr: %s, Verified Holder name: %s"%(upi_addr, verifyUPIAddr(upi_addr)))
+
+    elif choice == 3:
+        to_upi_addr = str(input("Reciever's UPI addr: "))
+        amount = int(input("Amount: "))
+        sendMoney(upi_addr, to_upi_addr, pin, amount)
+        print("Transaction carried out, not sure if successful or not.")
+        print("Sender Balance: %s"%getBalanceUPI(upi_addr, pin))
+
 
 web3.miner.stop()
 

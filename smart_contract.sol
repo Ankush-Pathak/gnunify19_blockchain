@@ -50,19 +50,19 @@ contract UPI
 		return holder_name;
 	}
 
-	function sendMoney(uint from_acc, bytes32 to_upi_addr, uint pin, uint amount) public
+	function sendMoney(bytes32 from_upi_addr, bytes32 to_upi_addr, uint pin, uint amount) public
 	{
-		if(g_bank_accounts[from_acc].holder_name.length == 0 || g_upi_addrs[to_upi_addr] == 0)
+		if(g_upi_addrs[from_upi_addr] == 0 || g_upi_addrs[to_upi_addr] == 0)
 		{
 			return;
 		}
 
-		if(g_bank_accounts[from_acc].balance < amount || g_bank_accounts[from_acc].pin != pin)
+		if(g_bank_accounts[g_upi_addrs[from_upi_addr]].balance < amount || g_bank_accounts[g_upi_addrs[from_upi_addr]].pin != pin)
 		{
 			return;
 		}
 		
-		BankAccount storage bank_account_from = g_bank_accounts[from_acc];
+		BankAccount storage bank_account_from = g_bank_accounts[g_upi_addrs[from_upi_addr]];
 		bank_account_from.balance -= amount;
 
 		BankAccount storage bank_account_to = g_bank_accounts[g_upi_addrs[to_upi_addr]];
@@ -82,5 +82,19 @@ contract UPI
 		}
 
 		return int(g_bank_accounts[account_number].balance);
+	}
+
+	function getBalanceUPI(bytes32 upi_addr, uint pin) public view returns (int)
+	{
+		if(g_upi_addrs[upi_addr] == 0)
+		{
+			return -1;
+		}
+		if(g_bank_accounts[g_upi_addrs[upi_addr]].pin != pin)
+		{
+			return -1;
+		}
+		
+		return int(g_bank_accounts[g_upi_addrs[upi_addr]].balance);
 	}
 }
