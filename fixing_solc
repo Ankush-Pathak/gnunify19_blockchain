@@ -1,0 +1,4 @@
+For some reason the smart contract works well only with solc 0.5.4, and, as of writing, the latest version is 0.5.7. So, if you have installed solc using the ethereum apt repository, remove it.
+Run the following commands:
+sudo chmod +x solc-static-linux
+sudo cp solc-static-linux /usr/bin/solc
